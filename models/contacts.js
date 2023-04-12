@@ -37,12 +37,14 @@ const addContact = async (body) => {
 };
 
 const updateContact = async (contactId, body) => {
-  const { name, email, phone } = body;
+  ;
   let updatedElement;
   const updatedArr = JSON.stringify(
     (await listContacts()).map((el) => {
       if (el.id === contactId) {
-        el = { name, email, phone, id: contactId };
+        el = {
+          ...el, ...body, id: contactId
+        };
         updatedElement = el
       }
       return el;
