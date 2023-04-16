@@ -1,58 +1,54 @@
-const fs = require("fs").promises;
-const path = require("path");
-const contactsPath = path.resolve("./models/contacts.json");
-const { uid } = require("uid");
+// const fs = require("fs").promises;
+const mongoose = require('mongoose');
 
+(async function conectToMongoDB() {
+  await mongoose.connect(process.env.DB_URI)
+  console.log('Conected to MongoDB')
+})().catch(err => {
+  console.error(err)
+  return process.exit(1)
+})
+const contactsSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, 'Set name for contact'],
+  },
+  email: { type: String },
+  phone: { type: Number },
+  favorite: {
+    type: Boolean,
+    default: false,
+  },
+});
+const Contact = mongoose.model('contacts', contactsSchema);
 const listContacts = async () => {
-  return JSON.parse(await fs.readFile(contactsPath, "utf-8"));
+  const res = await Contact.find().catch(err => console.error(err))
+  return res
 };
-
 const getContactById = async (contactId) => {
-  return JSON.parse(await fs.readFile(contactsPath, "utf-8")).filter(
-    (el) => el.id === contactId
-  );
+  const res = await Contact.findOne({ _id: contactId }).catch(err => console.error(err));
+  return res
 };
-
-const removeContact = async (contactId) => {
-  let deletedItem;
-  const filterArr = JSON.stringify(
-    (await listContacts()).filter((el) => {
-      if (el.id === contactId) {
-        deletedItem = el;
-      }
-      return el.id !== contactId;
-    })
-  );
-  await fs.writeFile(contactsPath, filterArr, "utf-8");
-  return deletedItem;
-};
-
 const addContact = async (body) => {
-  const newElement = { ...body, id: uid() };
-  const updatedArr = JSON.stringify(
-    (await listContacts()).concat([newElement])
-  );
-  await fs.writeFile(contactsPath, updatedArr, "utf-8");
-  return newElement
+  const res = await Contact.create(body)
+  return res
+};
+const removeContact = async (contactId) => {
+  const res = await Contact.findOneAndRemove({ _id: contactId }).catch(err => console.error(err));
+  return res
+};
+const updateContact = async (contactId, body) => {
+  const res = await Contact.findOneAndUpdate({ _id: contactId }, body, { new: true }).catch(err => console.error(err));
+  console.log('res____', res)
+  return res
+};
+const updateStatusContact = async (contactId, body) => {
+  const res = await Contact.findOneAndUpdate({ _id: contactId }, body, { new: true }).catch(err => console.error(err));
+  console.log('res____', res)
+  return res
 };
 
-const updateContact = async (contactId, body) => {
-  ;
-  let updatedElement;
-  const updatedArr = JSON.stringify(
-    (await listContacts()).map((el) => {
-      if (el.id === contactId) {
-        el = {
-          ...el, ...body, id: contactId
-        };
-        updatedElement = el
-      }
-      return el;
-    })
-  );
-  await fs.writeFile(contactsPath, updatedArr, "utf-8");
-  return updatedElement;
-};
+
 
 module.exports = {
   listContacts,
@@ -60,4 +56,5 @@ module.exports = {
   removeContact,
   addContact,
   updateContact,
+  updateStatusContact
 };
