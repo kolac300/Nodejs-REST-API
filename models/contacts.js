@@ -39,12 +39,10 @@ const removeContact = async (contactId) => {
 };
 const updateContact = async (contactId, body) => {
   const res = await Contact.findOneAndUpdate({ _id: contactId }, body, { new: true }).catch(err => console.error(err));
-  console.log('res____', res)
   return res
 };
 const updateStatusContact = async (contactId, body) => {
   const res = await Contact.findOneAndUpdate({ _id: contactId }, body, { new: true }).catch(err => console.error(err));
-  console.log('res____', res)
   return res
 };
 
