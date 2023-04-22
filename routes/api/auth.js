@@ -89,12 +89,12 @@ router.post("/login", async (req, res, next) => {
 
 
 router.post("/logout", logoutMiddleware, async (req, res, next) => {
-    return res.status(204);
+    return res.status(204).json();
 }
 
 );
 router.get("/current", currentUser, async (req, res, next) => {
-    return res.status(200);
+    return res.status(200).json();
 
 }
 );
