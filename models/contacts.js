@@ -1,4 +1,3 @@
-// const fs = require("fs").promises;
 const mongoose = require('mongoose');
 
 (async function conectToMongoDB() {
@@ -19,30 +18,52 @@ const contactsSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  ownerID: { type: String }
 });
 const Contact = mongoose.model('contacts', contactsSchema);
-const listContacts = async () => {
-  const res = await Contact.find().catch(err => console.error(err))
+
+const listContacts = async (ownerID, favorite, limit, page) => {
+  let res;
+  if (favorite === "true" || favorite === "false") {
+    if (limit > 0 && page > 0 && limit || page) {
+      const skip = page > 0 ? (page - 1) * limit : 0;
+      res = await Contact.find({ ownerID, favorite }).skip(skip).limit(limit).exec().catch(err => console.error(err))
+    } else {
+      res = await Contact.find({ ownerID, favorite }).catch(err => console.error(err))
+    }
+  } else {
+    if (limit > 0 && page > 0 && limit || page) {
+      const skip = page > 0 ? (page - 1) * limit : 0;
+      res = await Contact.find({ ownerID }).skip(skip).limit(limit).exec().catch(err => console.error(err))
+    } else {
+      res = await Contact.find({ ownerID }).catch(err => console.error(err))
+    }
+  }
   return res
 };
-const getContactById = async (contactId) => {
-  const res = await Contact.findOne({ _id: contactId }).catch(err => console.error(err));
+const count = async (ownerID) => {
+  return await Contact.countDocuments({ ownerID }).exec()
+};
+
+const getContactById = async (ownerID, contactId) => {
+  const res = await Contact.findOne({ _id: contactId, ownerID }).catch(err => console.error(err));
   return res
 };
-const addContact = async (body) => {
-  const res = await Contact.create(body)
+const addContact = async (ownerID, body) => {
+  console.log('first', { ...body, ownerID, })
+  const res = await Contact.create({ ...body, ownerID, })
   return res
 };
-const removeContact = async (contactId) => {
-  const res = await Contact.findOneAndRemove({ _id: contactId }).catch(err => console.error(err));
+const removeContact = async (ownerID, contactId) => {
+  const res = await Contact.findOneAndRemove({ _id: contactId, ownerID }).catch(err => console.error(err));
   return res
 };
-const updateContact = async (contactId, body) => {
-  const res = await Contact.findOneAndUpdate({ _id: contactId }, body, { new: true }).catch(err => console.error(err));
+const updateContact = async (ownerID, contactId, body) => {
+  const res = await Contact.findOneAndUpdate({ _id: contactId, ownerID }, body, { new: true }).catch(err => console.error(err));
   return res
 };
-const updateStatusContact = async (contactId, body) => {
-  const res = await Contact.findOneAndUpdate({ _id: contactId }, body, { new: true }).catch(err => console.error(err));
+const updateStatusContact = async (ownerID, contactId, body) => {
+  const res = await Contact.findOneAndUpdate({ _id: contactId, ownerID }, body, { new: true }).catch(err => console.error(err));
   return res
 };
 
@@ -54,5 +75,6 @@ module.exports = {
   removeContact,
   addContact,
   updateContact,
-  updateStatusContact
+  updateStatusContact,
+  count
 };

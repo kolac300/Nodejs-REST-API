@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken')
-const User = require("../controller/auth");
+const { User } = require("../controller/auth");
 
 function currentUser(req, res, next) {
     const authHeader = req.headers.authorization
@@ -10,12 +10,15 @@ function currentUser(req, res, next) {
             if (err) return res.status(401).json({ message: "invalid token" });
             const user = await User.findOne({ token })
 
-            if (user)
-                return res.status(200).json({
+            if (user) {
+                req.currentUser = {
                     "email": user.email,
                     "subscription": user.subscription
-                })
-            else return res.status(401).json({ "message": "Not authorized" })
+                }
+                next()
+            } else { return res.status(401).json({ "message": "Not authorized" }) }
+
+
         }))
 
 }

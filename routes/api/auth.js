@@ -1,7 +1,5 @@
 
 
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 const logoutMiddleware = require("../../middlewares/logout")
 const currentUser = require("../../middlewares/current")
 const Joi = require('joi');
@@ -16,85 +14,64 @@ const schemaLogin = Joi.object({
     email: Joi.string().required(),
 });
 
+
+const schemaUpdateSubscription = Joi.object({
+    subscription: Joi.string().valid('starter', 'pro', "business").required()
+});
+
 const router = require('express').Router();
 
-const User = require("../../controller/auth")
+const { registerUser, loginUser, updateSubscription } = require('../../controller/auth')
 
 
-router.post("/register", async (req, res, next) => {
-
-
-
+router.post("/register", async function register(req, res, next) {
     const result = schemaRegister.validate(req.body);
     if (result.error) {
         return res.status(400).json({ message: result.error.details })
     }
     const { password, email, subscription = "starter" } = req.body
-    const hash = await bcrypt.hash(password, 10)
-
     try {
-        console.log('first', User)
-        const user = await User.findOne({ email })
-        if (user !== null) {
-            return res.status(409).json({ massege: "Email in use" })
-        }
-
-        await User.create({ password: hash, email, subscription })
-
+        await registerUser(email, password, subscription)
         return res.status(201).json({ user: { email, subscription } })
     } catch (error) {
-
-        return res.status(404).json({ massege: error })
+        return res.status(409).json({ message: error.message })
     }
-
 });
 
-
-
-router.post("/login", async (req, res, next) => {
-    const { password, email } = req.body
-
+router.post("/login", async function login(req, res, next) {
     const result = schemaLogin.validate(req.body);
     if (result.error) {
         return res.status(400).json({ message: result.error.details })
     }
+    const { password, email } = req.body
     try {
-        const user = await User.findOne({ email })
-        if (user === null) {
-            return res.status(401).json({ massege: "Email or password is wrong" })
-        }
-        bcrypt.compare(password, user.password, async (err, result) => {
-            if (err) {
-                return res.status(500).json({ message: "Internal Server Error" })
-            }
-            if (result) {
-                const token = jwt.sign({ email: user.email, subscription: user.subscription, id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' })
-                const loginedUser = await User.findOneAndUpdate({ email }, { email, token, password: user.password }, { new: true })
-                return res.status(200).json({
-                    token,
-                    user: {
-                        email,
-                        subscription: loginedUser.subscription,
-                    }
-                });
-            } else {
-                return res.status(401).json({ message: "Email or password is wrong" })
-            }
-        })
+        const { token, user } = await loginUser(email, password)
+        return res.status(200).json({ token, user })
     } catch (error) {
-        return res.status(404).json({ massege: error })
+        return res.status(401).json({ message: error.message })
     }
 }
 );
 
-
 router.post("/logout", logoutMiddleware, async (req, res, next) => {
-    return res.status(204).json();
+    return res.status(204).json("no data");
 }
 
 );
 router.get("/current", currentUser, async (req, res, next) => {
-    return res.status(200).json();
+    return res.status(200).json(req.currentUser);
+}
+);
+router.patch("/", currentUser, async (req, res, next) => {
+    const result = schemaUpdateSubscription.validate(req.body);
+    if (result.error) {
+        return res.status(400).json({ message: result.error.details })
+    }
+    const { email } = req.currentUser
+    const { subscription } = req.body
+
+    const updatedUser = await updateSubscription(email, subscription)
+    return res.status(200).json(updatedUser);
 
 }
 );
