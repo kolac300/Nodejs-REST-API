@@ -1,9 +1,12 @@
 
+
+
+
 const express = require('express')
 const logger = require('morgan')
 const cors = require('cors')
-
-const authRouter = require("./routes/api/auth");
+const path = require('path')
+const authRouter = require("./routes/api/users");
 const contactsRouter = require("./routes/api/contacts");
 
 const authMiddleware = require("./middlewares/auth")
@@ -18,9 +21,15 @@ app.use(express.json());
 
 
 
+
+
+app.use('/avatars', express.static(path.join(__dirname,'avatars')));
+
 app.use("/api/contacts", authMiddleware, contactsRouter);
 
 app.use("/api/users", authRouter);
+
+
 
 
 app.use((req, res) => {
@@ -30,6 +39,8 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
   res.status(500).json({ message: err.message });
 });
+
+
 
 module.exports = app;
 

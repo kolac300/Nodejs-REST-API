@@ -30,7 +30,7 @@ const {
   updateContact,
   updateStatusContact,
   count
-} = require(path.resolve("./controller/contacts"));
+} = require(path.resolve("./modells/contacts"));
 
 const router = express.Router();
 
