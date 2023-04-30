@@ -16,20 +16,18 @@ const registerSchema = new mongoose.Schema({
         enum: ["starter", "pro", "business"],
         default: "starter"
     },
-    token: String
+    avatarURL: {
+        type: String,
+        default: null
+    },
+    token: {
+        type: String,
+        default: null
+    }
 });
 
 const User = mongoose.model('users', registerSchema);
 
-
-async function registerUser(email, password, subscription) {
-    const hash = await bcrypt.hash(password, 10)
-    const user = await User.findOne({ email })
-    if (user !== null) {
-        throw new Error("Email in use")
-    }
-    await User.create({ password: hash, email, subscription })
-}
 
 async function loginUser(email, password) {
     const user = await User.findOne({ email })
@@ -53,6 +51,6 @@ async function updateSubscription(email, subscription) {
 }
 
 
-module.exports = { registerUser, loginUser, User, updateSubscription }
+module.exports = { loginUser, User, updateSubscription, bcrypt }
 
 
