@@ -35,10 +35,13 @@ const schemaLogin = Joi.object({
 const schemaUpdateSubscription = Joi.object({
     subscription: Joi.string().valid('starter', 'pro', "business").required()
 });
+const schemaReVerify = Joi.object({
+    email: Joi.string().email().required(),
+});
 
 const router = require('express').Router();
 
-const { loginUser, updateSubscription } = require('../../controller/auth')
+const { loginUser, updateSubscription, verify, reVerify } = require('../../controller/auth')
 const { createUser, uploadAvatar } = require('../../modells/user')
 
 router.post("/register", async function register(req, res, next) {
@@ -99,17 +102,9 @@ router.patch("/avatars", currentUser, upload.single('avatar'), async (req, res, 
         const image = await Jimp.read(uploadedFile.path);
         image.resize(250, 250) // resize
         await image.writeAsync(uploadedFile.path);
-
-
-
         const { email } = req.currentUser
         const { filename } = req.file
         const updatedUser = await uploadAvatar(email, filename)
-
-
-
-
-
         return res.status(200).json(updatedUser);
     } catch (error) {
 
@@ -119,10 +114,38 @@ router.patch("/avatars", currentUser, upload.single('avatar'), async (req, res, 
     }
 }
 );
+router.get("/verify/:verificationToken", async (req, res, next) => {
+    const { verificationToken } = req.params
+    try {
+        const user = await verify(verificationToken)
+        if (user === null) {
+            return res.status(404).json({
+                "message": 'Not Found'
+            })
+        }
+        return res.status(200).json({ message: 'Verification successful' })
+    } catch (er) {
+        return res.status(404).json({
+            "message": 'User not found'
+        })
+    }
+})
+router.post("/verify", async (req, res, next) => {
 
+    const result = schemaReVerify.validate(req.body);
+    if (result.error) {
+        return res.status(400).json({ message: result.error.details })
+    }
+    const { email } = req.body
+    const user = await reVerify(email)
+    if (user === null) {
+        return res.status(404).json({
+            "message": "Verification has already been passed"
+        })
+    }
+    return res.status(200).json({ "message": "Verification email sent" })
 
-
-
+})
 
 module.exports = router
 
